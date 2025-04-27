@@ -170,12 +170,41 @@ const slice = createSlice({
   ssh root@123.57.108.196
   <!-- 通过vscode提供的`Remote SSH`插件 -->
   <!-- 连接成功后,会在vscode中显示对应的文件结构 -->
+  <!-- 配置`nginx` -->
+  /etc/nginx/nginx.conf // nginx配置文件的路径
+  <!-- 配置nginx.conf文件 -->
+  <!-- 可以改变下用户的身份 -->
+  user root;
+  <!-- nginx默认访问的是server -->
+  server {
+    listen 80;
+    listen [::]:80;
+    <!-- 将这行注释带哦 -->
+    # root /usr/share/nginx/html;
+
+    <!-- 配置 / 路径的访问页面 -->
+    location / {
+      <!-- 配置要访问的文件夹 -->
+      root /root/airbnb;
+      <!-- 配置要访问的页面 -->
+      index index.html;
+    }
+  }
+  <!-- 修改完成后,重启nginx -->
+  systemctl restart nginx
   ```
 + 本地项目打包,通过`npm run build`命令;
 + 部署方式:
   1\. 本地项目打包,通过`npm run build`命令,将打包后的文件上传到云服务器上;
+  ```
+  mkdir airbnb
+  <!-- 打开airbnb文件夹 -->
+  <!-- 将打包好的文件,直接拖到vscode中对应的文件夹下 -->
+  ```
   2\. 通过`Jenkins`进行自动化部署,在服务器上安装`Jenkins`,配置自动化部署的脚本;
   ```
+  <!-- 安装git -->
+  dnf install git
   <!-- Jenkins依赖Java,需要安装Java,这里要注意,最新的Jenkins要求Java版本最低位11,推荐11版本-->
   dnf search java // 查找Java
   dnf install java-11-openjdk // 安装Java
@@ -211,14 +240,76 @@ const slice = createSlice({
   cat /var/lib/jenkins/secrets/initialAdminPassword
   <!-- 输入初始密码,然后就可以登录jenkins了 -->
   <!-- 安装插件,一般选择推荐插件选项即可 -->
-
   <!-- 创建git仓库,上传本地项目代码 -->
   git remote add origin git@123.57.108.196:root/test.git
   <!-- 本地分支是为master,该命令会将本地的master分支该为main -->
   git branch -M main
   git push -u origin main
+  <!-- 解锁Jenkins后并且插件安装成功后,创建管理员账号 -->
+  用户名: root
+  密码: root@123456
+  确认密码: root@123456
+  全名: root
+  邮箱: root@qq.com
+  <!-- 用户创建完成后,实例Url不需要再修改,点击使用即可 -->
+  <!-- 创建任务 -->
+  点击新建item或者create a job都可以
+  <!-- 输入任务名称,选择freestyle project -->
+  <!-- 开始配置任务 -->
+  <!-- 进行general配置 -->
+  描述:  airbnb
+  配置项目地址,选择自己项目存储的方式,然后输入对应
+  的地址,我这里是github,因此选择github,输入项目地址即可
+  <!-- 源码管理配置 -->
+  源码管理: git
+  配置项目Url: https://github.com/root/airbnb.git
+  配置凭证：
+  在Manage Jenkins中,选择Manage Credentials，选择全局凭证,
+  然后点击Add Credentials,创建凭证,然后输入用户名和密码即可，也可以通过`SSH密钥`来创建凭证。然后在配置凭证中
+  选择自己的凭证即可；
+  配置对应的项目分支
+  <!-- 配置构建触发器 -->
+  我们一般是配置定时构建和轮询SCM，轮询SCM会去查看是否有更新，如果更新了，就会触发构建。
+  <!-- 配置构建环境 -->
+  配置构建时需要依赖的环境,选项中并没有Node环境,我们需要单独配置，在Manage Jenkins中,选择Manage Plugins,选择Installed,然后搜索Nodejs,安装Nodejs插件,然后重启jenkins即可。在Global Tool Configuration中,选择Nodejs,然后选择对应的版本即可。此时,我们选择Provide Node & npm bin/folder to PATH即可。
+  <!-- 构建步骤,也就是执行过程中需要执行的命令 -->
+  内容如下:
+  <!-- 打印当前目录 -->
+  pwd
+  <!-- 查看node版本是否有问题 -->
+  node -v
+  npm -v
+  <!-- 安装依赖 -->
+  npm install 
+  <!-- 进行打包 -->
+  npm run build
+  <!-- 查看当前目录 -->
+  pwd
+  <!-- 进行输出 -->
+  echo '构建成功'
+  <!-- 查看当前目录下的文件 -->
+  ls
 
+  # 删除/root/mall_cms文件夹里所有的内容
+  rm -rf /root/mall_cms/* 
+  <!-- 将打包后的文件,拷贝到/root/mall_cms文件夹下,dist位我们打包后的文件夹名称 -->
+  cp -rf ./dist/* /root/mall_cms/
+  <!-- 最后保存任务 -->
+  <!-- 但是此时构建还是会报错,因为Jenkins默认是没有访问服务器文件的权限的 -->
+  1.修改jenkins的默认用户名为root
+    文件路径:/etc/sysconfig/jenkins
+    修改JENKINS_USER=root，然后重启jenkins即可
+  2.将jenkins添加到root组中
+    sudo usermod -a -G root jenkins
+  3.给jenkins某个目录的权限
+    chown -R jenkins:jenkins /root/mall_cms
+  这三种方式,最后都需要重启jenkins才行
+  systemctl restart jenkins
   ```
+  + Manage Plugins :插件管理
+  + Manage Credentials :凭证管理
+  + Global Tool Configuration：全局工具配置
+  + 
 
 
 
