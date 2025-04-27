@@ -1,25 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { memo, Suspense } from "react";
+import { useRoutes } from "react-router-dom";
+import routes from "./router";
 
-function App() {
+import AppHeader from "./components/app-header";
+import AppFooter from "./components/app-footer";
+import useScrollTop from "./hooks/useScrollTop";
+export default memo(function App() {
+  useScrollTop();
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      <AppHeader />
+      {/* 防止懒加载时的页面闪动 */}
+      <Suspense fallback={<div>loading...</div>}>
+        <div className="page">
+          {/* 配置路由 */}
+          {useRoutes(routes)}
+        </div>
+      </Suspense>
+      <AppFooter />
     </div>
   );
-}
-
-export default App;
+});
